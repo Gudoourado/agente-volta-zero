@@ -1,261 +1,128 @@
-# 🤖 Agente de Primeiro Atendimento — Volta Zero
+# Agente de Primeiro Atendimento — Volta Zero
+> Desafio técnico · Estágio Dev IA · Sunter
 
-Agente inteligente de suporte construído com **Python**, **Streamlit** e **Groq API (Llama 3.3)** para automatizar o primeiro atendimento ao cliente com foco em segurança, clareza e escalonamento responsável.
+## Demo
+🚀 **[Testar Aplicação ao Vivo Aqui](https://agente-volta-zero-kdhup6wqnhtgphtgnyptp6.streamlit.app/)**
 
-O sistema recebe a mensagem do utilizador, consulta uma **FAQ local em JSON** e decide autonomamente entre:
+## O problema que estou resolvendo
+As equipes de suporte humano gastam a maior parte do seu tempo a responder a perguntas repetitivas de Nível 1 (recuperação de senhas, dúvidas de faturação, cancelamentos). Isso gera filas de espera e atrasa muito o atendimento de clientes com problemas críticos reais.
 
-- responder diretamente com base na base de conhecimento;
-- ou escalar o caso para atendimento humano, gerando um **ticket estruturado**.
+O **Agente Volta Zero** atua como uma barreira inteligente. O seu impacto é **filtrar e resolver autonomamente as dúvidas comuns em segundos** utilizando a Base de Conhecimento (FAQ), libertando os agentes humanos para atuarem apenas nos casos complexos. Quando o escalonamento é necessário, o sistema já entrega ao humano um ticket estruturado, com resumo, tom de voz do cliente e sugestão de próximos passos.
 
----
+## Como o agente funciona
 
-## ✨ Propósito
-
-Este projeto foi desenhado para simular uma **volta zero de atendimento** em um cenário realista de suporte:
-
-- perguntas frequentes devem ser respondidas com rapidez e consistência;
-- casos ambíguos, sensíveis ou mal cobertos pela FAQ devem ser encaminhados com contexto;
-- a interface deve ser simples, profissional e focada na conversa.
-
-Mais do que um chat, a proposta aqui é demonstrar uma implementação que equilibra:
-
-- **UX limpa e corporativa**
-- **tool calling nativo**
-- **controle seguro de estado**
-- **engenharia pragmática para produção**
-
----
-
-## 🏗️ Arquitetura e Funcionalidades
-
-### 1. Tool Calling Nativo
-
-O agente usa **tool calling nativo da Groq** para decidir o próximo passo da conversa.
-
-Ferramentas disponíveis:
-
-- `buscar_faq(query)`: consulta a FAQ local e devolve os resultados mais aderentes com score de confiança
-- `criar_ticket(categoria, tom, resumo, proximo_passo)`: cria um ticket estruturado para atendimento humano
-
-Fluxo de decisão:
-
+### Fluxo de decisão
 ```text
 Mensagem do cliente
-        ↓
-LLM chama buscar_faq(query)
-        ↓
-FAQ cobre bem a dúvida?
-   ├─ Sim → responde diretamente ao cliente
-   └─ Não → cria ticket estruturado e informa o escalonamento
+       ↓
+A IA avalia a intenção e chama buscar_faq(query)
+       ↓
+  confiança >= 0.58? ──── sim ──→ IA formata a resposta e responde ao cliente
+       │
+      não
+       ↓
+IA chama criar_ticket(dados) → IA avisa o cliente ("Vou acionar um humano...")
 ```
 
-O ponto forte aqui é que o agente não depende de frameworks pesados. A lógica fica clara, auditável e fácil de explicar em entrevista.
+### Ferramentas implementadas (Tool Calling)
+- `buscar_faq(query)`: Busca entradas relevantes na base de conhecimento (JSON). **Obrigatória e prioritária** sempre que chega uma nova mensagem.
+- `criar_ticket(dados)`: Registra um ticket estruturado (Categoria, Tom, Resumo, etc.). Como **último recurso**, apenas quando a confiança na FAQ é baixa ou o cliente exige um humano.
+- *Resposta Direta*: Responde de forma natural no chat. Ao final do fluxo, traduzindo o resultado da tool para o cliente.
 
-### 2. State Management Seguro
+### Critério de confiança
+A decisão de escalar ou resolver baseia-se numa **arquitetura de priorização semântica e threshold**:
+1. **Limiar (Threshold):** A ferramenta `buscar_faq` exige uma confiança mínima de `0.58` (e relevância de `0.25`) para classificar um *match* como válido.
+2. **Priorização de Categoria:** Implementei um reforço no código para dúvidas críticas de negócio (*senha*, *pagamento*, *cancelamento*). Se houver *match* nestas palavras, a flag `recomenda_resposta_direta` é ativada.
+3. **Guardrails no Prompt:** O `SYSTEM_PROMPT` contém uma "Regra de Ouro" estrita e as descrições das ferramentas (JSON Schema) usam gatilhos como "OBRIGATÓRIO" e "PROIBIDO" para forçar o LLM a ler a FAQ antes de pensar em criar um ticket.
 
-Um dos pontos mais críticos deste projeto foi a gestão do histórico quando há tool calling.
+## Decisões técnicas
 
-Para evitar o clássico **HTTP 400 da Groq** em conversas multi-turno, o histórico é sanitizado antes de cada nova chamada ao modelo:
+### LLM escolhida
+**Provedor:** Groq  
+**Modelo:** `llama-3.3-70b-versatile`  
+**Por quê:** A API da Groq oferece uma latência quase nula, o que proporciona uma experiência de chat em tempo real excelente. O modelo Llama 3.3 de 70B provou ter uma precisão fantástica no seguimento de instruções de Tool Calling e na formatação de tickets.
 
-- remove mensagens com `role == "tool"`
-- remove mensagens de `assistant` com `tool_calls`
-- remove mensagens de `assistant` sem conteúdo textual final
-- preserva apenas:
-  - o `system prompt`
-  - mensagens do `user`
-  - respostas finais textuais do `assistant`
+### Stack
+**Backend/Lógica:** Python 3.10+  
+**Interface:** Streamlit  
+**Testes:** Pytest (20 testes automatizados passando)  
+**Deploy:** Streamlit Community Cloud  
+**Por quê essa combinação:** O Streamlit permite construir interfaces orientadas a chat de forma rápida e limpa. A stack nativa em Python facilita a manipulação de dicionários para os históricos de conversa da Groq e o ecossistema do `pytest` garantiu a estabilidade das refatorações.
 
-Além disso, o contexto é truncado para manter apenas as últimas mensagens relevantes do diálogo. Isso torna o fluxo mais robusto e reduz o risco de o modelo "alucinar" sintaxe de ferramenta em turnos seguintes.
+### Base de conhecimento
+Utilizei um ficheiro **JSON** (`faq.json`) atuando como um banco chave-valor simples.  
+**Porquê:** Para um protótipo de primeiro atendimento, o JSON é extremamente leve, rápido de iterar e não exige infraestrutura externa.  
+**Cobertura:** Foquei nas três maiores dores do suporte SaaS (Acesso/Senha, Faturação/PIX, Churn/Cancelamento).
 
-### 3. Clean UI & Graceful Degradation
+### Gestão de Estado (Proteção contra Erro 400)
+Implementei uma **sanitização rigorosa do histórico de mensagens** (Sliding Window de 6 mensagens). O código limpa rastos de *tool calls* antigas antes de enviar um novo turno à Groq, prevenindo falhas de geração (HTTP 400 - `failed_generation`) e economizando tokens de contexto.
 
-A interface foi construída com foco em simplicidade e usabilidade:
+## Casos de teste
 
-- uso de `st.chat_message` e `st.chat_input`
-- layout minimalista e centrado na janela de conversa
-- tickets exibidos de forma elegante em `st.expander`
-- tratamento de erros sem quebrar a aplicação
+### Resolvidos pelo agente
+**Caso 1 — Recuperação de Acesso**  
+Entrada:  "Esqueci a minha senha e não consigo entrar no sistema."  
+Ferramenta chamada: buscar_faq("senha")  
+Resultado: respondeu direto (Confiança e Match validados)  
+Resposta: "Para redefinir sua senha, acesse a página de login..."
 
-Mesmo quando a API falha, o utilizador continua a ver uma resposta amigável em vez de um crash visual ou stack trace exposto na interface.
+**Caso 2 — Dúvida de Faturação**  
+Entrada:  "Consigo pagar o plano mensal no PIX ou é só cartão?"  
+Ferramenta chamada: buscar_faq("pagamento PIX")  
+Resultado: respondeu direto  
+Resposta: "Aceitamos Cartão de Crédito e PIX para planos mensais."
 
-### 4. Confiabilidade
+### Escalados corretamente
+**Caso 3 — Escalonamento Crítico / Urgência**  
+Entrada:  "O sistema caiu no meio da minha operação e estou perdendo euros! Preciso de alguém agora!"  
+Motivo do escalonamento: Intenção não mapeada na FAQ + Tom Urgente  
+Ticket gerado: categoria: "Suporte Técnico", tom: "Frustrado/Urgente"
 
-O projeto está coberto por **20 testes automatizados com `pytest`**, incluindo:
+**Caso 4 — Dúvida de Integração (Fora de Escopo)**  
+Entrada:  "Como faço para integrar o banco de dados da Sunter com o meu Power BI?"  
+Motivo do escalonamento: Ferramenta buscar_faq retornou abaixo do threshold (sem resposta).  
+Ticket gerado: categoria: "Integrações/API", tom: "Neutro/Dúvida"
 
-- inicialização do agente
-- chamadas diretas sem ferramentas
-- fluxo de tool calling com FAQ
-- escalonamento com ticket
-- tratamento de ferramenta desconhecida
-- regressão do histórico sanitizado para evitar erro 400 da Groq
-- testes da base de conhecimento
-- testes das ferramentas
+## O que eu faria diferente com mais tempo
+1. **RAG com Vector Database:** Substituiria o `faq.json` por um banco vetorial (como ChromaDB ou Pinecone) utilizando modelos de embeddings para lidar com FAQs na escala de milhares de documentos baseados puramente em similaridade semântica profunda.
+2. **Integração Real de Tickets:** Conectaria a função `criar_ticket` a uma API real de Help Desk em vez de simular na interface com `st.expander`.
+3. **Memória de Longo Prazo:** Implementaria PostgreSQL + SQLAlchemy para guardar o histórico das sessões.
 
----
-
-## 🧠 Como o Agente Decide
-
-O comportamento do agente segue uma regra simples e explícita:
-
-1. A mensagem do cliente entra pela interface.
-2. O agente consulta a FAQ via `buscar_faq`.
-3. A FAQ devolve resultados com score de similaridade e sinalização de resposta direta.
-4. Se a cobertura for suficiente, o agente responde.
-5. Se a confiança for baixa ou a situação exigir contexto humano, o agente cria um ticket.
-
-O sistema prioriza **não responder errado**. Quando há dúvida real, o caso é escalado.
-
----
-
-## 📁 Estrutura do Projeto
-
-```text
-.
-├── app.py
-├── agent/
-│   ├── __init__.py
-│   ├── agent.py
-│   ├── kb.py
-│   └── tools.py
-├── data/
-│   └── faq.json
-├── tests/
-│   ├── __init__.py
-│   ├── test_agent.py
-│   ├── test_kb.py
-│   └── test_tools.py
-├── .env.example
-├── .gitignore
-├── requirements.txt
-└── README.md
-```
-
-### Responsabilidades por módulo
-
-- `app.py`: interface Streamlit e gestão da sessão
-- `agent/agent.py`: integração com Groq, prompt, tool calling e sanitização do histórico
-- `agent/tools.py`: implementação das tools e schemas enviados ao modelo
-- `agent/kb.py`: carregamento, normalização e busca na FAQ local
-- `data/faq.json`: base inicial de conhecimento
-- `tests/`: suíte automatizada de validação
-
----
-
-## 🚀 Como Rodar o Projeto
-
-### Pré-requisitos
-
-- Python **3.10+**
-- Conta na Groq com uma API Key válida
-
-### 1. Clonar o repositório
+## Como rodar localmente
 
 ```bash
-git clone <url-do-repositorio>
-cd projeto
-```
+# 1. Clone o repositório
+git clone https://github.com/Gudoourado/agente-volta-zero.git
+cd agente-volta-zero
 
-### 2. Criar e ativar o ambiente virtual
-
-#### Windows (PowerShell)
-
-```powershell
+# 2. Crie o ambiente virtual
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
-#### macOS / Linux
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-```
-
-### 3. Instalar as dependências
-
-```bash
+# 3. Instale as dependências
 pip install -r requirements.txt
-```
 
-### 4. Configurar o `.env`
+# 4. Configure as variáveis de ambiente
+cp .env.example .env
+# Edite o arquivo .env e adicione a sua chave da API da Groq
 
-Crie um ficheiro `.env` com base no `.env.example` e adicione a sua chave da Groq:
+# 5. Rode a bateria de testes (Garantia de Qualidade)
+pytest -q
 
-```env
-GROQ_API_KEY=sua_chave_aqui
-GROQ_MODEL=llama-3.3-70b-versatile
-FAQ_DIRECT_RESPONSE_THRESHOLD=0.58
-```
-
-Notas:
-
-- `GROQ_API_KEY` é obrigatória para executar o agente
-- `GROQ_MODEL` é opcional; por padrão o projeto usa `llama-3.3-70b-versatile`
-- `FAQ_DIRECT_RESPONSE_THRESHOLD` permite ajustar a agressividade da resposta automática
-
-### 5. Executar a aplicação
-
-```bash
+# 6. Rode o projeto
 streamlit run app.py
 ```
 
-Depois disso, a aplicação abrirá pronta para uso em ambiente local.
+## Variáveis de ambiente
+Crie um ficheiro `.env` baseado no `.env.example`:
 
----
-
-## ✅ Como Rodar os Testes
-
-Execute:
-
-```bash
-pytest
+```env
+GROQ_API_KEY=sua_chave_real_aqui_gsk...
 ```
 
-Se quiser uma saída mais curta:
+⚠️ Nunca commite o arquivo `.env`. Ele já está protegido no `.gitignore`.
 
-```bash
-pytest -q
-```
-
-O projeto foi validado com **20 testes automatizados**.
-
----
-
-## 🛠️ Stack Técnica
-
-- **Python**
-- **Streamlit**
-- **Groq API**
-- **Llama 3.3**
-- **rapidfuzz**
-- **python-dotenv**
-- **pytest**
-
----
-
-## 🎯 Diferenciais Técnicos
-
-- Arquitetura simples, modular e fácil de manter
-- Tool calling nativo, sem dependência de orquestradores pesados
-- Busca local em FAQ com heurística clara e explicável
-- Sanitização rigorosa do histórico para robustez em multi-turno
-- Interface limpa, orientada ao caso de uso real
-- Tratamento de erro amigável na camada de produto
-- Cobertura automatizada com testes de regressão
-
----
-
-## 📌 Observações
-
-- O ficheiro `.env` não deve ser versionado
-- A FAQ local pode ser expandida facilmente sem alterar a arquitetura principal
-- O projeto já está preparado para evoluir para uma versão com base semântica ou integração com LLMs adicionais no futuro
-
----
-
-## 👤 Autor
-
-- Nome: _preencher_
-- LinkedIn: _preencher_
-- GitHub: _preencher_
-
+## Autor
+**Nome:** Gustavo Aurelio  
+**LinkedIn:** https://www.linkedin.com/in/gustavodoourado/  
+**GitHub:** https://github.com/Gudoourado
