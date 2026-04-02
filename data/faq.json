@@ -1,0 +1,52 @@
+[
+  {
+    "category": "senha",
+    "question": "Como redefinir minha senha?",
+    "answer": "Acesse a pagina de login e clique em 'Esqueci minha senha'. Voce recebera um e-mail com um link para criar uma nova senha. O link expira em 24 horas."
+  },
+  {
+    "category": "senha",
+    "question": "Nao recebi o e-mail de redefinicao de senha.",
+    "answer": "Verifique a pasta de spam ou lixo eletronico. Se nao encontrar, tente solicitar novamente em 'Esqueci minha senha'. Caso o problema persista, entre em contato com o suporte."
+  },
+  {
+    "category": "cancelamento",
+    "question": "Como cancelo meu plano?",
+    "answer": "Acesse Configuracoes > Assinatura > Cancelar plano. O acesso permanece ativo ate o final do periodo ja pago. Nao ha multa por cancelamento."
+  },
+  {
+    "category": "cancelamento",
+    "question": "Perco meus dados ao cancelar?",
+    "answer": "Apos o cancelamento, seus dados ficam armazenados por 30 dias. Durante esse periodo, voce pode reativar sua conta e recuperar tudo. Apos 30 dias, os dados sao removidos permanentemente."
+  },
+  {
+    "category": "pagamento",
+    "question": "Quais formas de pagamento sao aceitas?",
+    "answer": "Aceitamos cartao de credito (Visa, Mastercard, Amex), boleto bancario e Pix. Para planos anuais, tambem oferecemos transferencia bancaria."
+  },
+  {
+    "category": "pagamento",
+    "question": "Como atualizar meu metodo de pagamento?",
+    "answer": "Acesse Configuracoes > Pagamento > Atualizar metodo. Voce pode trocar de cartao, alterar para boleto ou Pix a qualquer momento. A mudanca vale a partir da proxima cobranca."
+  },
+  {
+    "category": "cobranca",
+    "question": "Fui cobrado duas vezes, o que faco?",
+    "answer": "Se identificou uma cobranca duplicada, entre em contato com nosso suporte financeiro. Analisaremos o caso e, confirmada a duplicidade, o estorno e feito em ate 7 dias uteis."
+  },
+  {
+    "category": "planos",
+    "question": "Quais planos estao disponiveis?",
+    "answer": "Oferecemos tres planos: Starter (gratuito, ate 3 usuarios), Pro (R$49/mes, ate 20 usuarios) e Enterprise (personalizado). Todos incluem suporte por e-mail. Pro e Enterprise tem suporte prioritario."
+  },
+  {
+    "category": "planos",
+    "question": "Como faco upgrade do meu plano?",
+    "answer": "Acesse Configuracoes > Assinatura > Alterar plano. Selecione o novo plano desejado. O valor e calculado proporcionalmente ao periodo restante. O upgrade tem efeito imediato."
+  },
+  {
+    "category": "conta",
+    "question": "Como alterar o e-mail da minha conta?",
+    "answer": "Acesse Configuracoes > Perfil > Alterar e-mail. Sera enviado um link de confirmacao para o novo e-mail. Ate a confirmacao, o e-mail antigo permanece ativo."
+  }
+]

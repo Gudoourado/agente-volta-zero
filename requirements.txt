@@ -1,0 +1,5 @@
+streamlit==1.44.1
+groq==0.25.0
+rapidfuzz==3.12.2
+python-dotenv==1.0.1
+pytest==8.3.5
