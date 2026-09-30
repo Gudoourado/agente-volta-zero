@@ -1,5 +1,5 @@
 # Agente de Primeiro Atendimento — Volta Zero
-> Desafio técnico · Estágio Dev IA · Sunter
+> Triagem de suporte com IA: responde pela FAQ quando tem confiança e escala para um humano com ticket estruturado. Python · Llama 3.3 70B (Groq) · tool calling · pytest.
 
 ## Demo
 🚀 **[Testar Aplicação ao Vivo Aqui](https://agente-volta-zero-kdhup6wqnhtgphtgnyptp6.streamlit.app/)**
@@ -121,6 +121,9 @@ GROQ_API_KEY=sua_chave_real_aqui_gsk...
 ```
 
 ⚠️ Nunca commite o arquivo `.env`. Ele já está protegido no `.gitignore`.
+
+## Origem
+Nasceu como resposta a um desafio técnico e segue evoluindo como projeto próprio.
 
 ## Autor
 **Nome:** Gustavo Aurelio  
