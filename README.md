@@ -123,7 +123,7 @@ GROQ_API_KEY=sua_chave_real_aqui_gsk...
 ⚠️ Nunca commite o arquivo `.env`. Ele já está protegido no `.gitignore`.
 
 ## Origem
-Nasceu como resposta a um desafio técnico e segue evoluindo como projeto próprio.
+Nasceu como resposta a um desafio técnico.
 
 ## Autor
 **Nome:** Gustavo Aurelio  
